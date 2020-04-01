@@ -8,7 +8,7 @@ const sengridAuthorization = `Bearer ${keys.sendgrid}`
 
 /* GET users listing. */
 router.post('/add', function(req, res, next) {
-  console.log("request", req.hostname, req.headers.host && req.secure, req.body)
+  console.log("request", req.get('origin'), req.get('host'), req.hostname, req.headers.host && req.secure, req.body)
   let secure = req.secure
 if (req.hostname == "localhost" && keys.whitelistedHosts.indexOf(req.hostname) > -1) {
   secure = true

@@ -8,13 +8,14 @@ const sengridAuthorization = `Bearer ${keys.sendgrid}`
 
 /* GET users listing. */
 router.post('/add', function(req, res, next) {
-  console.log("request", req.get('origin'), req.get('host'), req.hostname, req.headers.host && req.secure, req.body)
+  let origin = req.get('origin')
+  console.log("request", origin, req.secure, req.body)
   let secure = req.secure
-if (req.hostname == "localhost" && keys.whitelistedHosts.indexOf(req.hostname) > -1) {
+if (origin == "http://localhost:8080" && keys.whitelistedHosts.indexOf(origin) > -1) {
   secure = true
 }
-  if (keys.whitelistedHosts.indexOf(req.hostname) > -1 &&  secure) {
-    if (req.body.email && emailValidator.validate(req.body.email)) {
+  if (keys.whitelistedHosts.indexOf(origin) > -1 &&  secure) {
+    if (req.body.email && emailValidator.validate(req.body.email) && false) {
 
       const contact = {
         "list_ids": [

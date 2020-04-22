@@ -7,6 +7,8 @@ const cors = require('cors')
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var mailingListRouter = require('./routes/mailinglist');
+var applyRouter = require('./routes/apply');
+var statusRouter = require('./routes/status');
 
 var app = express();
 app.use(cors())
@@ -22,6 +24,8 @@ app.use(cookieParser());
 
 app.use('/', indexRouter);
 app.use('/api/v1/mailinglist', mailingListRouter);
+app.use('/api/v1/apply', applyRouter);
+app.use('/api/v1/status', statusRouter);
 /*
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

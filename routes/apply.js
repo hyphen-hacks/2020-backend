@@ -7,10 +7,7 @@ const sengridEndpoint = "https://api.sendgrid.com"
 const sengridAuthorization = `Bearer ${keys.sendgrid}`
 var admin = require('firebase-admin');
 const moment = require('moment-timezone')
-admin.initializeApp({
-  credential: admin.credential.cert(keys.firebase),
-  databaseURL: "https://hyphen-hacks-2020.firebaseio.com"
-});
+
 /* /api/v1/apply*/
 const MongoClient = require('mongodb').MongoClient;
 
@@ -32,9 +29,9 @@ client.connect(err => {
       if (optional) {
         return true
       }
-      const result = text.length > 1
+      const result = text.length >= 1
       if (!result) {
-        console.log("invalid: ", text, "text", fld)
+        console.log("invalid: ", text, text.length, "text", fld)
       }
       return result
     },
@@ -78,7 +75,59 @@ client.connect(err => {
     }
 
   }
+function validateMentorApplication(app) {
+  let result = true
+  if (!validator.text(app.firstName, false, "name")) {
 
+    result = false
+  }
+  if (!validator.text(app.lastName, false, "name")) {
+    result = false
+  }
+  if (!validator.email(app.email)) {
+    result = false
+  }
+  if (!validator.text(app.phoneNumber, false, "phone")) {
+    result = false
+  }
+  if (!validator.text(app.company, false, "company")) {
+    result = false
+  }
+  if (!validator.text(app.companyPosition, false, "companyPosition")) {
+    result = false
+  }
+  if (!validator.text(app.expAttending, false)) {
+    result = false
+  }
+  if (!validator.text(app.expMentoringJudging, false)) {
+    result = false
+  }
+  if (!validator.text(app.expWorkingWithStudents, false)) {
+    result = false
+  }
+  if (!validator.text(app.areasOfExpertise, false)) {
+    result = false
+  }
+  if (!validator.text(app.accommodations, false, "accomodations")) {
+    result = false
+  }
+  if (!validator.text(app.shirtSize, false, "shirtsize")) {
+    result = false
+  }
+  if (!validator.text(app.comments, true)) {
+    result = false
+  }
+  if (!validator.agree(app.agreeTerms)) {
+    result = false
+  }
+  if (!validator.agree(app.agreePrivacy)) {
+    result = false
+  }
+  if (!validator.agree(app.agreeApplication)) {
+    result = false
+  }
+  return result
+}
   function validateApplication(app) {
     let result = true
     if (!validator.text(app.firstName, false, "name")) {
@@ -211,6 +260,77 @@ client.connect(err => {
       res.end()
     }
   });
+  router.post('/mentor', function (req, res, next) {
+    let origin = req.get('origin')
+    console.log("request", origin, req.body)
+    if (keys.whitelistedHosts.indexOf(origin) > -1) {
+      admin.auth().verifyIdToken(req.headers.authorization)
+      .then(async function (decodedToken) {
+        let uid = decodedToken.uid;
+
+        if (jsonSize(req.body) > 1048576) {
+          res.status(400)
+          res.send({error: "applicationTooLarge"})
+          res.end()
+        } else {
+          let application = req.body.app
+          if (validateMentorApplication(application)) {
+            try {
+              await db.collection("applicants").insertOne({
+                _id: uid, firstName: application.firstName, lastName: application.lastName, email: application.email,
+                application: application, applied: moment().unix(), role: "mentor"
+              })
+              const contact = {
+                "contacts": [
+                  {
+                    "first_name": application.firstName,
+                    "last_name": application.lastName,
+                    "email": application.email,
+                    "custom_fields": {
+                      [keys.customFieldIds.role]: "mentor",
+                      [keys.customFieldIds.status]: "applied",
+                    }
+                  }
+                ]
+              }
+              await fetch(`${sengridEndpoint}/v3/marketing/contacts`, {
+                method: 'put',
+                headers: {
+                  "Authorization": sengridAuthorization,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify(contact)
+              })
+              res.status(200)
+              res.send({applied: true, success: true})
+              res.end()
+            } catch (err) {
+              console.log(err)
+              res.status(500)
+              res.send({error: "internal error"})
+              res.end()
+            }
+
+          } else {
+            res.status(400)
+            res.send({error: "invalidApp"})
+            res.end()
+          }
+        }
+        // ...
+      }).catch(function (error) {
+        console.log(error)
+        res.status(401)
+        res.send({error: "authorizing"})
+        res.end()
+      });
+
+    } else {
+      res.status(401)
+      res.send({error: "unsecure request"})
+      res.end()
+    }
+  });
   router.get("/status", (req, res) => {
     let origin = req.get('origin')
     console.log("request", origin, req.body)
@@ -218,6 +338,32 @@ client.connect(err => {
       admin.auth().verifyIdToken(req.headers.authorization)
       .then(async function (decodedToken) {
         let uid = decodedToken.uid;
+        try {
+          let applications = await db.collection("applicants").find({_id: uid}).toArray()
+          if (applications[0]) {
+            res.status(200)
+            res.send({applied: true, reviewed: false, role: applications[0].role})
+            res.end()
+          } else {
+            let accepted = await db.collection("people").find({_id: uid}).toArray()
+            if (accepted[0]) {
+              res.status(200)
+              res.send({
+                applied: true, reviewed: true, waiverCompleted: accepted[0].waiverCompleted, role: accepted[0].role
+              })
+              res.end()
+            } else {
+              res.status(200)
+              res.send({applied: false})
+              res.end()
+            }
+          }
+        } catch (err) {
+          console.log(err)
+          res.status(500)
+          res.send({error: "internal server error"})
+          res.end()
+        }
 
       }).catch(function (error) {
         console.log(error)

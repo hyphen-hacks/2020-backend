@@ -232,6 +232,7 @@ function validateMentorApplication(app) {
               })
               res.status(200)
               res.send({applied: true, success: true})
+             await db.collection("events").insertOne({event: "attendeeSignUp", id: uid, time: moment().unix()})
               res.end()
             } catch (err) {
               console.log(err)
@@ -303,6 +304,7 @@ function validateMentorApplication(app) {
               })
               res.status(200)
               res.send({applied: true, success: true})
+              await db.collection("events").insertOne({event: "mentorSignUp", id: uid, time: moment().unix()})
               res.end()
             } catch (err) {
               console.log(err)

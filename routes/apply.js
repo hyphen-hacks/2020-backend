@@ -328,6 +328,30 @@ client.connect(err => {
                 },
                 body: JSON.stringify(contact)
               })
+              const email = {
+                "from": {email: "team@hyphen-hacks.com"},
+                "personalizations": [
+                  {
+                    "to": [
+                      {
+                        "email": application.email
+                      }
+                    ],
+                    "dynamic_template_data": {
+                      "first_name": application.firstName
+                    }
+                  }
+                ],
+                "template_id": "d-45cdc57f84d44ecfa08b97204d28ef18"
+              }
+              await fetch(`${sengridEndpoint}/v3/mail/send`, {
+                method: 'post',
+                headers: {
+                  "Authorization": sengridAuthorization,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify(email)
+              })
               res.status(200)
               res.send({applied: true, success: true})
               await db.collection("events").insertOne({event: "mentorSignUp", id: uid, time: moment().unix()})

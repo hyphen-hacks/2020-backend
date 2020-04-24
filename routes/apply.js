@@ -75,59 +75,61 @@ client.connect(err => {
     }
 
   }
-function validateMentorApplication(app) {
-  let result = true
-  if (!validator.text(app.firstName, false, "name")) {
 
-    result = false
+  function validateMentorApplication(app) {
+    let result = true
+    if (!validator.text(app.firstName, false, "name")) {
+
+      result = false
+    }
+    if (!validator.text(app.lastName, false, "name")) {
+      result = false
+    }
+    if (!validator.email(app.email)) {
+      result = false
+    }
+    if (!validator.text(app.phoneNumber, false, "phone")) {
+      result = false
+    }
+    if (!validator.text(app.company, false, "company")) {
+      result = false
+    }
+    if (!validator.text(app.companyPosition, false, "companyPosition")) {
+      result = false
+    }
+    if (!validator.text(app.expAttending, false)) {
+      result = false
+    }
+    if (!validator.text(app.expMentoringJudging, false)) {
+      result = false
+    }
+    if (!validator.text(app.expWorkingWithStudents, false)) {
+      result = false
+    }
+    if (!validator.text(app.areasOfExpertise, false)) {
+      result = false
+    }
+    if (!validator.text(app.accommodations, false, "accomodations")) {
+      result = false
+    }
+    if (!validator.text(app.shirtSize, false, "shirtsize")) {
+      result = false
+    }
+    if (!validator.text(app.comments, true)) {
+      result = false
+    }
+    if (!validator.agree(app.agreeTerms)) {
+      result = false
+    }
+    if (!validator.agree(app.agreePrivacy)) {
+      result = false
+    }
+    if (!validator.agree(app.agreeApplication)) {
+      result = false
+    }
+    return result
   }
-  if (!validator.text(app.lastName, false, "name")) {
-    result = false
-  }
-  if (!validator.email(app.email)) {
-    result = false
-  }
-  if (!validator.text(app.phoneNumber, false, "phone")) {
-    result = false
-  }
-  if (!validator.text(app.company, false, "company")) {
-    result = false
-  }
-  if (!validator.text(app.companyPosition, false, "companyPosition")) {
-    result = false
-  }
-  if (!validator.text(app.expAttending, false)) {
-    result = false
-  }
-  if (!validator.text(app.expMentoringJudging, false)) {
-    result = false
-  }
-  if (!validator.text(app.expWorkingWithStudents, false)) {
-    result = false
-  }
-  if (!validator.text(app.areasOfExpertise, false)) {
-    result = false
-  }
-  if (!validator.text(app.accommodations, false, "accomodations")) {
-    result = false
-  }
-  if (!validator.text(app.shirtSize, false, "shirtsize")) {
-    result = false
-  }
-  if (!validator.text(app.comments, true)) {
-    result = false
-  }
-  if (!validator.agree(app.agreeTerms)) {
-    result = false
-  }
-  if (!validator.agree(app.agreePrivacy)) {
-    result = false
-  }
-  if (!validator.agree(app.agreeApplication)) {
-    result = false
-  }
-  return result
-}
+
   function validateApplication(app) {
     let result = true
     if (!validator.text(app.firstName, false, "name")) {
@@ -230,9 +232,33 @@ function validateMentorApplication(app) {
                 },
                 body: JSON.stringify(contact)
               })
+              const email = {
+                "from": {email: "team@hyphen-hacks.com"},
+                "personalizations": [
+                  {
+                    "to": [
+                      {
+                        "email": application.email
+                      }
+                    ],
+                    "dynamic_template_data": {
+                      "first_name": application.firstName
+                    }
+                  }
+                ],
+                "template_id": "d-45cdc57f84d44ecfa08b97204d28ef18"
+              }
+              await fetch(`${sengridEndpoint}/v3/mail/send`, {
+                method: 'post',
+                headers: {
+                  "Authorization": sengridAuthorization,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify(email)
+              })
               res.status(200)
               res.send({applied: true, success: true})
-             await db.collection("events").insertOne({event: "attendeeSignUp", id: uid, time: moment().unix()})
+              await db.collection("events").insertOne({event: "attendeeSignUp", id: uid, time: moment().unix()})
               res.end()
             } catch (err) {
               console.log(err)

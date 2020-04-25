@@ -46,7 +46,7 @@ client.connect(err => {
           // See the UserRecord reference doc for the contents of userRecord.
 
           let email = userRecord.toJSON().email
-          if (verifyEmail(email)) {
+          if (await verifyEmail(email) === true) {
             try {
               let applicationID = req.body.applicationId
               if (applicationID) {
@@ -226,7 +226,7 @@ client.connect(err => {
           // See the UserRecord reference doc for the contents of userRecord.
 
           let email = userRecord.toJSON().email
-          if (verifyEmail(email)) {
+          if (await verifyEmail(email) === true) {
             try {
               let applications = await db.collection("applicants").find().toArray()
               res.status(200)

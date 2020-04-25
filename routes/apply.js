@@ -207,6 +207,7 @@ client.connect(err => {
           let application = req.body.app
           if (validateApplication(application)) {
             try {
+
               await db.collection("applicants").insertOne({
                 _id: uid, firstName: application.firstName, lastName: application.lastName, email: application.email,
                 application: application, applied: moment().unix(), role: "attendee"
@@ -256,9 +257,17 @@ client.connect(err => {
                 },
                 body: JSON.stringify(email)
               })
+              let declinedRecords = await db.collection("declined").find({_id: uid}).toArray()
+              if (declinedRecords.length >= 1) {
+                await db.collection("declined").deleteOne({_id: uid})
+                console.log("removed declined reccord")
+                await db.collection("events").insertOne({event: "attendeeResubmit", id: uid, time: moment().unix()})
+              } else {
+                await db.collection("events").insertOne({event: "attendeeSignUp", id: uid, time: moment().unix()})
+              }
               res.status(200)
               res.send({applied: true, success: true})
-              await db.collection("events").insertOne({event: "attendeeSignUp", id: uid, time: moment().unix()})
+
               res.end()
             } catch (err) {
               console.log(err)
@@ -352,9 +361,17 @@ client.connect(err => {
                 },
                 body: JSON.stringify(email)
               })
+              let declinedRecords = await db.collection("declined").find({_id: uid}).toArray()
+              if (declinedRecords.length >= 1) {
+                await db.collection("declined").deleteOne({_id: uid})
+                console.log("removed declined reccord")
+                await db.collection("events").insertOne({event: "mentorResubmit", id: uid, time: moment().unix()})
+              } else {
+                await db.collection("events").insertOne({event: "mentorSignUp", id: uid, time: moment().unix()})
+              }
               res.status(200)
               res.send({applied: true, success: true})
-              await db.collection("events").insertOne({event: "mentorSignUp", id: uid, time: moment().unix()})
+
               res.end()
             } catch (err) {
               console.log(err)

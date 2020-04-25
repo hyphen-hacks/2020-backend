@@ -33,7 +33,185 @@ client.connect(err => {
       return authEmailed.length >= 1
     }
   }
+  router.post("/decline", (req, res) => {
+    let origin = req.get('origin')
+    console.log("request", origin, req.body)
+    if (keys.whitelistedHosts.indexOf(origin) > -1) {
+      admin.auth().verifyIdToken(req.headers.authorization)
+      .then(async function (decodedToken) {
+        let uid = decodedToken.uid;
+        admin.auth().getUser(uid)
+        .then(async function (userRecord) {
+          // See the UserRecord reference doc for the contents of userRecord.
 
+          let email = userRecord.toJSON().email
+          if (await verifyEmail(email) === true) {
+            try {
+              let applicationID = req.body.applicationId
+              if (applicationID) {
+                let application = await db.collection("applicants").find({_id: applicationID}).toArray()
+                if (application[0]) {
+                  application = application[0]
+                  console.log(application)
+                  let time = moment().unix()
+
+                  if (application.role === "attendee") {
+                    await db.collection("declined").insertOne(application)
+                    await db.collection("events").insertOne({
+                      event: "attendeeDeclined", id: applicationID, time: time, authorizer: uid
+                    })
+                    await db.collection("applicants").deleteOne({_id: applicationID})
+                    const contact = {
+                      "contacts": [
+                        {
+                          "first_name": application.firstName,
+                          "last_name": application.lastName,
+                          "email": application.email,
+                          "custom_fields": {
+                            [keys.customFieldIds.role]: "attendee",
+                            [keys.customFieldIds.status]: "declined",
+                          }
+                        }
+                      ]
+                    }
+                    await fetch(`${sengridEndpoint}/v3/marketing/contacts`, {
+                      method: 'put',
+                      headers: {
+                        "Authorization": sengridAuthorization,
+                        "Content-Type": "application/json"
+                      },
+                      body: JSON.stringify(contact)
+                    })
+                    const email = {
+                      "from": {email: "team@hyphen-hacks.com", name: "The Hyphen-Hacks Team"},
+                      "personalizations": [
+                        {
+                          "to": [
+                            {
+                              "email": application.email
+                            }
+                          ],
+                          "dynamic_template_data": {
+                            "first_name": application.firstName,
+                            "reasons": req.body.reasons
+                          }
+                        }
+                      ],
+                      "template_id": "d-4e8fc889b62b4c9c9cba05a6861245f3"
+                    }
+                    await fetch(`${sengridEndpoint}/v3/mail/send`, {
+                      method: 'post',
+                      headers: {
+                        "Authorization": sengridAuthorization,
+                        "Content-Type": "application/json"
+                      },
+                      body: JSON.stringify(email)
+                    })
+                    res.status(200)
+                    res.send({success: true})
+                    res.end()
+                  } else if (application.role === "mentor") {
+                    application.phone = application.application.phoneNumber
+                    await db.collection("declined").insertOne(application)
+                    await db.collection("events").insertOne({
+                      event: "mentorDeclined", id: applicationID, time: time, authorizer: uid
+                    })
+                    await db.collection("applicants").deleteOne({_id: applicationID})
+                    const contact = {
+                      "contacts": [
+                        {
+                          "first_name": application.firstName,
+                          "last_name": application.lastName,
+                          "email": application.email,
+                          "custom_fields": {
+                            [keys.customFieldIds.role]: "mentor",
+                            [keys.customFieldIds.status]: "declined",
+                          }
+                        }
+                      ]
+                    }
+                    await fetch(`${sengridEndpoint}/v3/marketing/contacts`, {
+                      method: 'put',
+                      headers: {
+                        "Authorization": sengridAuthorization,
+                        "Content-Type": "application/json"
+                      },
+                      body: JSON.stringify(contact)
+                    })
+                    const email = {
+                      "from": {email: "team@hyphen-hacks.com", name: "The Hyphen-Hacks Team"},
+                      "personalizations": [
+                        {
+                          "to": [
+                            {
+                              "email": application.email
+                            }
+                          ],
+                          "dynamic_template_data": {
+                            "first_name": application.firstName,
+                            "reasons": req.body.reasons
+                          }
+                        }
+                      ],
+                      "template_id": "d-4e8fc889b62b4c9c9cba05a6861245f3"
+                    }
+                    await fetch(`${sengridEndpoint}/v3/mail/send`, {
+                      method: 'post',
+                      headers: {
+                        "Authorization": sengridAuthorization,
+                        "Content-Type": "application/json"
+                      },
+                      body: JSON.stringify(email)
+                    })
+                    res.status(200)
+                    res.send({success: true})
+                    res.end()
+                  } else {
+                    res.status(400)
+                    res.send({error: "Invalid role"})
+                    res.end()
+                  }
+                } else {
+                  res.status(400)
+                  res.send({error: "application does not exist"})
+                  res.end()
+                }
+              } else {
+                res.status(400)
+                res.send({error: "no application id"})
+                res.end()
+              }
+
+
+            } catch (err) {
+              console.log(err)
+              res.status(500)
+              res.send({error: "internal server error"})
+              res.end()
+            }
+          } else {
+            res.status(401)
+            res.send({error: "not authorized"})
+            res.end()
+          }
+
+
+        })
+
+
+      }).catch(function (error) {
+        console.log(error)
+        res.status(401)
+        res.send({error: "authorizing"})
+        res.end()
+      });
+
+    } else {
+      res.status(401)
+      res.send({error: "unsecure request"})
+      res.end()
+    }
+  })
   router.post("/accept", (req, res) => {
     let origin = req.get('origin')
     console.log("request", origin, req.body)

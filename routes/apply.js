@@ -233,7 +233,7 @@ client.connect(err => {
                 body: JSON.stringify(contact)
               })
               const email = {
-                "from": {email: "team@hyphen-hacks.com"},
+                "from": {email: "team@hyphen-hacks.com", name: "The Hyphen-Hacks Team"},
                 "personalizations": [
                   {
                     "to": [
@@ -329,7 +329,7 @@ client.connect(err => {
                 body: JSON.stringify(contact)
               })
               const email = {
-                "from": {email: "team@hyphen-hacks.com"},
+                "from": {email: "team@hyphen-hacks.com", name: "The Hyphen-Hacks Team"},
                 "personalizations": [
                   {
                     "to": [

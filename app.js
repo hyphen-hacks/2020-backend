@@ -12,6 +12,7 @@ var applicationsRouter = require('./routes/applications');
 var adminAuthRouter = require('./routes/adminAuth');
 var adminRosterRouter = require('./routes/roster');
 var statusRouter = require('./routes/status');
+var eventsRouter = require('./routes/events');
 
 var app = express();
 app.use(cors())
@@ -31,6 +32,7 @@ app.use('/api/v1/apply', applyRouter);
 app.use('/api/v1/admin/applications', applicationsRouter);
 app.use('/api/v1/admin/auth', adminAuthRouter);
 app.use('/api/v1/admin/roster', adminRosterRouter);
+app.use('/api/v1/admin/events', eventsRouter);
 app.use('/api/v1/status', statusRouter);
 /*
 // catch 404 and forward to error handler

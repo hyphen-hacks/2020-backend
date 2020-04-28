@@ -82,6 +82,53 @@ client.connect(err => {
       res.end()
     }
   })
+  router.get("/:role", (req, res) => {
+    let origin = req.get('origin')
+    console.log("request", origin, req.body)
+    if (keys.whitelistedHosts.indexOf(origin) > -1) {
+      admin.auth().verifyIdToken(req.headers.authorization)
+      .then(async function (decodedToken) {
+        let uid = decodedToken.uid;
+        admin.auth().getUser(uid)
+        .then(async function (userRecord) {
+          // See the UserRecord reference doc for the contents of userRecord.
+
+          let email = userRecord.toJSON().email
+          if (await verifyEmail(email) === true) {
+            try {
+              let applications = await db.collection("people").find({role: req.params.role}).toArray()
+              res.status(200)
+              res.send({roster: applications, type: req.params.role})
+              res.end()
+            } catch (err) {
+              console.log(err)
+              res.status(500)
+              res.send({error: "internal server error"})
+              res.end()
+            }
+          } else {
+            res.status(401)
+            res.send({error: "not authorized"})
+            res.end()
+          }
+
+
+        })
+
+
+      }).catch(function (error) {
+        console.log(error)
+        res.status(401)
+        res.send({error: "authorizing"})
+        res.end()
+      });
+
+    } else {
+      res.status(401)
+      res.send({error: "unsecure request"})
+      res.end()
+    }
+  })
 })
 
 

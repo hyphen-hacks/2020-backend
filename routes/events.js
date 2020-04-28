@@ -152,7 +152,7 @@ client.connect(err => {
                   events[key].userDescription = `${person} resubmitted their volunteer application`
                   return
                 case "signUpMailingList":
-                  events[key].userDescription = `${event.email} signed up for the mailinglist`
+                  events[key].userDescription = `${event.email} signed up for the mailinglist with refferer ${event.details.referer ? event.details.referer : "none"}`
                   return
                 default :
                   events[key].userDescription = `${event.event}`

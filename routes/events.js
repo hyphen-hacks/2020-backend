@@ -112,6 +112,7 @@ client.connect(err => {
 
                 }
               }
+
               console.log(person, authorizor, event.event, "done")
               switch (event.event) {
                 case "attendeeSignUp":
@@ -149,6 +150,9 @@ client.connect(err => {
                   return
                 case "volunteerResubmit":
                   events[key].userDescription = `${person} resubmitted their volunteer application`
+                  return
+                case "signUpMailingList":
+                  events[key].userDescription = `${event.email} signed up for the mailinglist`
                   return
                 default :
                   events[key].userDescription = `${event.event}`

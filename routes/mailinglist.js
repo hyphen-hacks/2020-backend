@@ -44,7 +44,9 @@ client.connect(err => {
 
         res.status(200)
         res.send({"success": true, "message": "added"})
-        db.collection("events").insertOne({event: "signUpMailingList", details: req.body, email: req.body.email, time: moment().unix()})
+        db.collection("events").insertOne({event: "signUpMailingList", details: req.body, email: req.body.email, time: moment().unix()}, (err) => {
+          console.log('logged email', {event: "signUpMailingList", details: req.body, email: req.body.email, time: moment().unix()}, err)
+        })
       } else {
         res.status(400)
         res.send({error: "no email"})
